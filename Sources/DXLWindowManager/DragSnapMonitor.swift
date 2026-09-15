@@ -13,7 +13,6 @@ final class DragSnapMonitor {
     private struct DragSession {
         var window: AXWindow
         var initialFrame: Rect
-        var startMouse: NSPoint
         var moved: Bool
         var unsnapping: Bool
         var restoreFrame: Rect?
@@ -118,7 +117,6 @@ final class DragSnapMonitor {
         drag = DragSession(
             window: window,
             initialFrame: frame,
-            startMouse: point,
             moved: false,
             unsnapping: unsnapping,
             restoreFrame: restore
@@ -127,12 +125,15 @@ final class DragSnapMonitor {
         AppLog.info("drag begin pid=\(window.pid) title=\(window.title ?? "")")
     }
 
+    /// A press only counts as a window drag once the window itself has moved. Cursor motion
+    /// alone also covers selecting text, dragging a scrollbar or panning content, and acting
+    /// on that used to unsnap the window under the pointer mid-selection.
     private func updateDrag() {
         guard var session = drag, let current = session.window.frame else { return }
+        guard session.moved || Self.windowWasDragged(from: session.initialFrame, to: current) else { return }
+
         if session.unsnapping, let original = session.restoreFrame, !session.moved {
             let mouse = NSEvent.mouseLocation
-            let mouseDelta = hypot(mouse.x - session.startMouse.x, mouse.y - session.startMouse.y)
-            guard mouseDelta > 6 else { return }
             if let screen = CoordinateSpace.screenContaining(cocoaPoint: mouse) {
                 let visible = CoordinateSpace.visibleTopLeftRect(for: screen)
                 let cursor = CoordinateSpace.cocoaPointToTopLeft(mouse)
@@ -155,16 +156,22 @@ final class DragSnapMonitor {
         }
 
         if !session.moved {
-            let mouse = NSEvent.mouseLocation
-            let mouseDelta = hypot(mouse.x - session.startMouse.x, mouse.y - session.startMouse.y)
-            let originMoved =
-                abs(current.x - session.initialFrame.x) > 4
-                || abs(current.y - session.initialFrame.y) > 4
-            guard originMoved || mouseDelta > 8 else { return }
             session.moved = true
             drag = session
         }
         presentTarget()
+    }
+
+    /// True when the window has been moved rather than resized. Dragging a top or left
+    /// resize handle also shifts the origin, so the size has to hold steady as well.
+    private static func windowWasDragged(from initial: Rect, to current: Rect) -> Bool {
+        let sizeHeld =
+            abs(current.width - initial.width) <= 2
+            && abs(current.height - initial.height) <= 2
+        let originMoved =
+            abs(current.x - initial.x) > 4
+            || abs(current.y - initial.y) > 4
+        return sizeHeld && originMoved
     }
 
     private func finishDrag() {
@@ -173,10 +180,7 @@ final class DragSnapMonitor {
         SnapRuntime.shared.isDragging = false
         statusHandler?(nil)
 
-        let mouse = NSEvent.mouseLocation
-        let mouseDelta = hypot(mouse.x - session.startMouse.x, mouse.y - session.startMouse.y)
-        let moved = session.moved || mouseDelta > 8
-        guard moved else {
+        guard session.moved else {
             SnapRuntime.shared.hideOverlays()
             return
         }

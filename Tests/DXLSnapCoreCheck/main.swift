@@ -39,14 +39,14 @@ enum DXLSnapCoreCheck {
                 == .zone(layoutID: LayoutCatalog.quadrants.id, zoneIndex: 0)
         )
         check(
-            "top center opens layout picker",
-            SnapDetector.target(cursor: Point(x: 960, y: 10), screen: screen, policy: policy)
+            "top edge opens layout picker",
+            SnapDetector.target(cursor: Point(x: 960, y: 4), screen: screen, policy: policy)
                 == .layoutPicker
         )
         check(
-            "deeper top strip still opens layout picker",
+            "below the top band does not open the layout picker",
             SnapDetector.target(cursor: Point(x: 960, y: 50), screen: screen, policy: policy)
-                == .layoutPicker
+                != .layoutPicker
         )
         let display = Rect(x: 0, y: 0, width: 1920, height: 1080)
         let visible = Rect(x: 0, y: 25, width: 1920, height: 1055)
@@ -67,6 +67,15 @@ enum DXLSnapCoreCheck {
                 visible: visible,
                 policy: policy
             ) == .layoutPicker
+        )
+        check(
+            "picker stays closed well below the menu bar",
+            SnapDetector.target(
+                cursor: Point(x: 960, y: 80),
+                display: display,
+                visible: visible,
+                policy: policy
+            ) == .none
         )
         check(
             "center does not snap",

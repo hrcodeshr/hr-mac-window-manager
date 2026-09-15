@@ -5,10 +5,13 @@ public struct SnapPolicy: Equatable, Sendable {
     public var cornerSize: Double
     public var topPickerThickness: Double
 
+    /// `topPickerThickness` is measured down from the top of the desktop, so on a display
+    /// with a menu bar the picker band is the menu bar strip plus this much. Keep it small:
+    /// the picker should only appear when a window is thrown at the very top of the screen.
     public static let `default` = SnapPolicy(
         edgeThickness: 20,
         cornerSize: 40,
-        topPickerThickness: 80
+        topPickerThickness: 12
     )
 
     public init(edgeThickness: Double, cornerSize: Double, topPickerThickness: Double) {
@@ -104,8 +107,7 @@ public enum SnapDetector {
             return .zone(layoutID: LayoutCatalog.quadrants.id, zoneIndex: 3)
         }
 
-        let pickerDepth = max(policy.topPickerThickness, min(260, visible.height * 0.22))
-        let pickerBottom = visible.minY + pickerDepth
+        let pickerBottom = visible.minY + policy.topPickerThickness
         if point.y <= pickerBottom {
             return .layoutPicker
         }
