@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "dxl-mac-window-manager",
+    name: "hr-mac-window-manager",
     platforms: [
         .macOS(.v13),
     ],

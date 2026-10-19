@@ -1,4 +1,4 @@
-# dxl-mac-window-manager
+# hr-mac-window-manager
 
 Windows-style window snapping for macOS, written in Swift.
 
@@ -21,8 +21,8 @@ You do not need Xcode. A Swift toolchain is enough. `make test` does not use XCT
 ## Build (macOS 13+)
 
 ```bash
-git clone https://github.com/hrcodeshr/dxl-mac-window-manager.git
-cd dxl-mac-window-manager
+git clone https://github.com/hrcodeshr/hr-mac-window-manager.git
+cd hr-mac-window-manager
 make test
 make package
 open "dist/DXL Window Manager.app"
